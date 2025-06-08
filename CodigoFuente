@@ -1,0 +1,96 @@
+from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
+import sqlite3
+import os
+
+app = Flask(__name__)
+
+# Configuración para carga de imágenes
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Crear la tabla si no existe
+def init_db():
+    with sqlite3.connect('siniestros.db') as conn:
+        conn.execute('''CREATE TABLE IF NOT EXISTS siniestros (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            fecha TEXT,
+                            lugar TEXT,
+                            tipo TEXT,
+                            chasis TEXT,
+                            foto TEXT
+                        )''')
+init_db()
+
+@app.route('/')
+def index():
+    conn = sqlite3.connect('siniestros.db')
+    siniestros = conn.execute('SELECT * FROM siniestros').fetchall()
+    conn.close()
+    return render_template('index.html', siniestros=siniestros)
+
+@app.route('/registrar', methods=['GET', 'POST'])
+def registrar():
+    if request.method == 'POST':
+        fecha = request.form.get('fecha')
+        lugar = request.form.get('lugar')
+        tipo = request.form.get('tipo')
+        chasis = request.form.get('chasis')
+        archivo = request.files.get('foto')
+
+        if not fecha or not lugar or not tipo:
+            return "Faltan campos obligatorios", 400
+
+        filename = None
+        if archivo and allowed_file(archivo.filename):
+            filename = secure_filename(archivo.filename)
+            archivo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        conn = sqlite3.connect('siniestros.db')
+        conn.execute('INSERT INTO siniestros (fecha, lugar, tipo, chasis, foto) VALUES (?, ?, ?, ?, ?)',
+                     (fecha, lugar, tipo, chasis, filename))
+        conn.commit()
+        conn.close()
+
+        return redirect('/')
+    else:
+        return render_template('registrar.html')
+
+@app.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar(id):
+    conn = sqlite3.connect('siniestros.db')
+    conn.row_factory = sqlite3.Row
+    if request.method == 'POST':
+        fecha = request.form.get('fecha')
+        lugar = request.form.get('lugar')
+        tipo = request.form.get('tipo')
+        chasis = request.form.get('chasis')
+
+        conn.execute('UPDATE siniestros SET fecha=?, lugar=?, tipo=?, chasis=? WHERE id=?',
+                     (fecha, lugar, tipo, chasis, id))
+        conn.commit()
+        conn.close()
+        return redirect('/')
+    else:
+        siniestro = conn.execute('SELECT * FROM siniestros WHERE id=?', (id,)).fetchone()
+        conn.close()
+        return render_template('editar.html', siniestro=siniestro)
+
+@app.route('/eliminar/<int:id>', methods=['POST'])
+def eliminar(id):
+    conn = sqlite3.connect('siniestros.db')
+    conn.execute('DELETE FROM siniestros WHERE id=?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect('/')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
