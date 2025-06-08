@@ -1,0 +1,20 @@
+<html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Siniestro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Editar Siniestro</h1>
+    <form method="POST">
+        Fecha: <input type="date" name="fecha" value="{{ siniestro['fecha'] }}" required><br>
+        Lugar: <input type="text" name="lugar" value="{{ siniestro['lugar'] }}" required><br>
+        Tipo: <input type="text" name="tipo" value="{{ siniestro['tipo'] }}" required><br>
+        Chasis: <input type="text" name="chasis" value="{{ siniestro['chasis'] }}"><br><br>
+        <input type="submit" value="Guardar Cambios">
+    </form>
+    <br>
+    <a href="/">Volver al inicio</a>
+</body>
+</html>
