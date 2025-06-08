@@ -1,0 +1,32 @@
+<html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Siniestros</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Lista de Siniestros</h1>
+    <a href="/registrar">Registrar nuevo siniestro</a>
+    <hr>
+    {% for s in siniestros %}
+        <div style="margin-bottom: 20px;">
+            <strong>Fecha:</strong> {{ s[1] }}<br>
+            <strong>Lugar:</strong> {{ s[2] }}<br>
+            <strong>Tipo:</strong> {{ s[3] }}<br>
+            <strong>Chasis:</strong> {{ s[4] }}<br>
+            {% if s[5] %}
+                <img src="{{ url_for('static', filename='uploads/' ~ s[5]) }}" width="200"><br>
+            {% endif %}
+
+            <!-- Botones de acción -->
+            <a href="{{ url_for('editar', id=s[0]) }}">Editar</a> |
+            <form action="{{ url_for('eliminar', id=s[0]) }}" method="POST" style="display:inline;">
+                <button type="submit" onclick="return confirm('¿Eliminar siniestro?')">Eliminar</button>
+            </form>
+        </div>
+        <hr>
+    {% endfor %}
+</body>
+</html>
+
